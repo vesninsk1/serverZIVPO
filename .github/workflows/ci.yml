@@ -10,9 +10,6 @@ env:
   JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
   SERVER_KEYSTORE_PASSWORD: ${{ secrets.SERVER_KEYSTORE_PASSWORD }}
   KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
-  license.key.prefix: ${{ secrets.prefix }}
-  license.key.length: ${{ secrets.length }}
-  license.check.expired.cron: ${{ secrets.cron }}
 
 jobs:
   build:
@@ -30,7 +27,7 @@ jobs:
         
     - name: Decode keystore
       run: |
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > src/main/resources/FirdKey.jks
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > src/main/resources/server.jks
         
     - name: Build with Maven
       run: mvn clean compile
@@ -48,7 +45,7 @@ jobs:
     - name: Verify JAR file
       run: |
         ls -la target/*.jar
-        jar tf target/*.jar | grep -E "(FirdKey|application|BOOT-INF)" || echo "No expected files found"
+        jar tf target/*.jar | grep -E "(server|application|BOOT-INF)" || echo "No expected files found"
         
     - name: Upload artifact
       uses: actions/upload-artifact@v4
