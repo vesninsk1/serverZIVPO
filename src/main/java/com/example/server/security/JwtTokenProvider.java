@@ -134,12 +134,10 @@ public class JwtTokenProvider {
                 .getBody()
                 .get("sessionId", String.class);
     }
-    
-
     public org.springframework.security.core.Authentication getAuthentication(String token) {
         String email = getEmailFromAccessToken(token);
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
         return new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
-                email, null, userDetails.getAuthorities());
+                userDetails, null, userDetails.getAuthorities());
     }
 }
