@@ -1,0 +1,1267 @@
+{
+	"info": {
+		"_postman_id": "c1a24a42-5830-47f6-8c81-8f16d770b05b",
+		"name": "Server Application API",
+		"description": "Коллекция для тестирования Spring Boot сервера с JWT аутентификацией и системой лицензирования",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "49342615"
+	},
+	"item": [
+		{
+			"name": "Auth API",
+			"item": [
+				{
+					"name": "GET-Password Requirements",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/password-requirements",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "password-requirements"]
+						},
+						"description": "Получить требования к паролю"
+					},
+					"response": []
+				},
+				{
+					"name": "POST-Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Иван Петров\",\n    \"email\": \"ivan@example.com\",\n    \"password\": \"Test123!@#\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "register"]
+						},
+						"description": "Регистрация нового пользователя"
+					},
+					"response": []
+				},
+				{
+					"name": "POST-Register Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAccessToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Admin User\",\n    \"email\": \"admin@example.com\",\n    \"password\": \"Admin123!@#\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register-admin",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "register-admin"]
+						},
+						"description": "Регистрация администратора (требует accessToken администратора)"
+					},
+					"response": []
+				},
+				{
+					"name": "POST-Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"Admin123!@#\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Вход в систему, получение access и refresh токенов"
+					},
+					"response": []
+				},
+				{
+					"name": "POST-Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/refresh",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "refresh"]
+						},
+						"description": "Обновление access токена с использованием refresh токена"
+					},
+					"response": []
+				}
+			],
+			"description": "Эндпоинты для аутентификации и регистрации"
+		},
+		{
+			"name": "Users API",
+			"item": [
+				{
+					"name": "GET-All Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAccessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["users"]
+						},
+						"description": "Получить список всех пользователей (требуются права ADMIN)"
+					},
+					"response": []
+				},
+				{
+					"name": "GET-User by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAccessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}"]
+						},
+						"description": "Получить пользователя по ID"
+					},
+					"response": []
+				},
+				{
+					"name": "PUT-Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAccessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Иван Иванов\",\n    \"email\": \"ivan.updated@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}"]
+						},
+						"description": "Обновить данные пользователя"
+					},
+					"response": []
+				},
+				{
+					"name": "PUT-Update User Role",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAccessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"role\": \"ADMIN\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}/role",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}", "role"]
+						},
+						"description": "Обновить роль пользователя"
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE-User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAccessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}"]
+						},
+						"description": "Удалить пользователя"
+					},
+					"response": []
+				}
+			],
+			"description": "Управление пользователями (требуются права ADMIN)"
+		},
+		{
+			"name": "Products API",
+			"item": [
+				{
+					"name": "GET-All Products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/products",
+							"host": ["{{baseUrl}}"],
+							"path": ["products"]
+						},
+						"description": "Получить список всех продуктов"
+					},
+					"response": []
+				},
+				{
+					"name": "GET-Product by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/products/{{productId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["products", "{{productId}}"]
+						},
+						"description": "Получить продукт по ID"
+					},
+					"response": []
+				},
+				{
+					"name": "POST-Create Product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAccessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Antivirus Pro\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/products",
+							"host": ["{{baseUrl}}"],
+							"path": ["products"]
+						},
+						"description": "Создать новый продукт (только ADMIN)"
+					},
+					"response": []
+				},
+				{
+					"name": "PUT-Block/Unblock Product",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAccessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/products/{{productId}}/block?blocked=true",
+							"host": ["{{baseUrl}}"],
+							"path": ["products", "{{productId}}", "block"],
+							"query": [
+								{
+									"key": "blocked",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Заблокировать/разблокировать продукт (только ADMIN)"
+					},
+					"response": []
+				}
+			],
+			"description": "Управление продуктами"
+		},
+		{
+			"name": "License Types API",
+			"item": [
+				{
+					"name": "GET-All License Types",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/license-types",
+							"host": ["{{baseUrl}}"],
+							"path": ["license-types"]
+						},
+						"description": "Получить список всех типов лицензий"
+					},
+					"response": []
+				},
+				{
+					"name": "GET-License Type by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/license-types/{{licenseTypeId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["license-types", "{{licenseTypeId}}"]
+						},
+						"description": "Получить тип лицензии по ID"
+					},
+					"response": []
+				},
+				{
+					"name": "POST-Create License Type",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAccessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"YEAR\",\n    \"defaultDurationInDays\": 365,\n    \"description\": \"Годовая лицензия\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/license-types",
+							"host": ["{{baseUrl}}"],
+							"path": ["license-types"]
+						},
+						"description": "Создать новый тип лицензии (только ADMIN)"
+					},
+					"response": []
+				}
+			],
+			"description": "Управление типами лицензий"
+		},
+		{
+			"name": "Devices API",
+			"item": [
+				{
+					"name": "GET-All User Devices",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/devices",
+							"host": ["{{baseUrl}}"],
+							"path": ["devices"]
+						},
+						"description": "Получить список всех устройств текущего пользователя"
+					},
+					"response": []
+				},
+				{
+					"name": "GET-Device by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/devices/{{deviceId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["devices", "{{deviceId}}"]
+						},
+						"description": "Получить устройство по ID"
+					},
+					"response": []
+				},
+				{
+					"name": "POST-Register Device",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"macAddress\": \"00:1B:44:11:3A:B7\",\n    \"name\": \"Мой рабочий компьютер\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/devices/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["devices", "register"]
+						},
+						"description": "Зарегистрировать новое устройство"
+					},
+					"response": []
+				},
+				{
+					"name": "PUT-Update Device",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Мой новый компьютер\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/devices/{{deviceId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["devices", "{{deviceId}}"]
+						},
+						"description": "Обновить информацию об устройстве"
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE-Device",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/devices/{{deviceId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["devices", "{{deviceId}}"]
+						},
+						"description": "Удалить устройство (только если на нем нет активных лицензий)"
+					},
+					"response": []
+				},
+				{
+					"name": "GET-Device Licenses",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/devices/{{deviceId}}/licenses",
+							"host": ["{{baseUrl}}"],
+							"path": ["devices", "{{deviceId}}", "licenses"]
+						},
+						"description": "Получить все лицензии, активированные на устройстве"
+					},
+					"response": []
+				},
+				{
+					"name": "POST-Check Device License",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"macAddress\": \"00:1B:44:11:3A:B7\",\n    \"productId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/devices/check-license",
+							"host": ["{{baseUrl}}"],
+							"path": ["devices", "check-license"]
+						},
+						"description": "Проверить наличие активной лицензии на устройстве для продукта (возвращает TicketResponse)"
+					},
+					"response": []
+				},
+				{
+					"name": "POST-Get Device License Ticket",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/devices/{{deviceId}}/licenses/{{licenseId}}/ticket",
+							"host": ["{{baseUrl}}"],
+							"path": ["devices", "{{deviceId}}", "licenses", "{{licenseId}}", "ticket"]
+						},
+						"description": "Получить Ticket для конкретной лицензии на устройстве (возвращает TicketResponse)"
+					},
+					"response": []
+				}
+			],
+			"description": "Управление устройствами пользователя"
+		},
+		{
+			"name": "Licenses API",
+			"item": [
+				{
+					"name": "POST-Create License",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAccessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": 1,\n    \"typeId\": 1,\n    \"ownerId\": 1,\n    \"deviceCount\": 3,\n    \"description\": \"Тестовая лицензия\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/licenses/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "create"]
+						},
+						"description": "Создать новую лицензию (только ADMIN)"
+					},
+					"response": []
+				},
+				{
+					"name": "POST-Activate License",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"activationKey\": \"{{licenseCode}}\",\n    \"deviceMac\": \"00:1B:44:11:3A:B7\",\n    \"deviceName\": \"Мой компьютер\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/licenses/activate",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "activate"]
+						},
+						"description": "Активировать лицензию на устройстве"
+					},
+					"response": []
+				},
+				{
+					"name": "POST-Check License",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"deviceMac\": \"00:1B:44:11:3A:B7\",\n    \"productId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/licenses/check",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "check"]
+						},
+						"description": "Проверить активную лицензию для устройства"
+					},
+					"response": []
+				},
+				{
+					"name": "POST-Renew License",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"activationKey\": \"{{licenseCode}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/licenses/renew",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "renew"]
+						},
+						"description": "Продлить срок действия лицензии"
+					},
+					"response": []
+				},
+				{
+					"name": "POST-Get License Ticket",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"macAddress\": \"00:1B:44:11:3A:B7\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/licenses/{{licenseCode}}/ticket",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "{{licenseCode}}", "ticket"]
+						},
+						"description": "Получить Ticket по коду лицензии и MAC-адресу (возвращает TicketResponse)"
+					},
+					"response": []
+				},
+				{
+					"name": "GET-License by Code",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/licenses/{{licenseCode}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "{{licenseCode}}"]
+						},
+						"description": "Получить информацию о лицензии по коду"
+					},
+					"response": []
+				},
+				{
+					"name": "GET-User Licenses",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/licenses/user",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "user"]
+						},
+						"description": "Получить все лицензии текущего пользователя"
+					},
+					"response": []
+				},
+				{
+					"name": "GET-User Active Licenses",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/licenses/user/active?productId=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "user", "active"],
+							"query": [
+								{
+									"key": "productId",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Получить активные лицензии пользователя для продукта"
+					},
+					"response": []
+				},
+				{
+					"name": "GET-License History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAccessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/licenses/{{licenseId}}/history",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "{{licenseId}}", "history"]
+						},
+						"description": "Получить историю лицензии (только ADMIN)"
+					},
+					"response": []
+				},
+				{
+					"name": "PUT-Block/Unblock License",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAccessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/licenses/{{licenseId}}/block?blocked=true",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "{{licenseId}}", "block"],
+							"query": [
+								{
+									"key": "blocked",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Заблокировать/разблокировать лицензию (только ADMIN)"
+					},
+					"response": []
+				}
+			],
+			"description": "Управление лицензиями"
+		},
+		{
+			"name": "Tickets API",
+			"item": [
+				{
+					"name": "POST-Generate Ticket",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"activationKey\": \"{{licenseCode}}\",\n    \"macAddress\": \"00:1B:44:11:3A:B7\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tickets/generate",
+							"host": ["{{baseUrl}}"],
+							"path": ["tickets", "generate"]
+						},
+						"description": "Сгенерировать Ticket по коду лицензии и MAC-адресу"
+					},
+					"response": []
+				},
+				{
+					"name": "GET-Generate Ticket by IDs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tickets/license/{{licenseId}}/device/{{deviceId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["tickets", "license", "{{licenseId}}", "device", "{{deviceId}}"]
+						},
+						"description": "Сгенерировать Ticket по ID лицензии и ID устройства"
+					},
+					"response": []
+				}
+			],
+			"description": "Эндпоинты для генерации Ticket (новая фича)"
+		},
+		{
+			"name": "Environment Variables",
+			"item": [
+				{
+					"name": "Set Admin Tokens",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"adminAccessToken\", pm.response.json().accessToken);",
+									"pm.environment.set(\"refreshToken\", pm.response.json().refreshToken);",
+									"pm.environment.set(\"adminEmail\", pm.response.json().email);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"Admin123!@#\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Установить admin токены в переменные окружения"
+					},
+					"response": []
+				},
+				{
+					"name": "Set User Tokens",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"accessToken\", pm.response.json().accessToken);",
+									"pm.environment.set(\"refreshToken\", pm.response.json().refreshToken);",
+									"pm.environment.set(\"userEmail\", pm.response.json().email);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"ivan@example.com\",\n    \"password\": \"Test123!@#\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Установить user токены в переменные окружения"
+					},
+					"response": []
+				},
+				{
+					"name": "Set License Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.code) {",
+									"        pm.environment.set(\"licenseCode\", jsonData.code);",
+									"    } else if (jsonData.licenseCode) {",
+									"        pm.environment.set(\"licenseCode\", jsonData.licenseCode);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminAccessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": 1,\n    \"typeId\": 1,\n    \"ownerId\": 1,\n    \"deviceCount\": 3,\n    \"description\": \"Тестовая лицензия\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/licenses/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "create"]
+						},
+						"description": "Создать лицензию и сохранить её код в переменную"
+					},
+					"response": []
+				},
+				{
+					"name": "Set Device ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.id) {",
+									"        pm.environment.set(\"deviceId\", jsonData.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"macAddress\": \"00:1B:44:11:3A:B7\",\n    \"name\": \"Мой компьютер\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/devices/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["devices", "register"]
+						},
+						"description": "Зарегистрировать устройство и сохранить его ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Set License ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.licenseId) {",
+									"        pm.environment.set(\"licenseId\", jsonData.licenseId);",
+									"    } else if (jsonData.id) {",
+									"        pm.environment.set(\"licenseId\", jsonData.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/licenses/{{licenseCode}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["licenses", "{{licenseCode}}"]
+						},
+						"description": "Получить ID лицензии по коду"
+					},
+					"response": []
+				}
+			],
+			"description": "Вспомогательные запросы для установки переменных окружения"
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://localhost:8443",
+			"type": "string",
+			"description": "Базовый URL сервера (HTTPS)"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string",
+			"description": "JWT Access Token для обычного пользователя"
+		},
+		{
+			"key": "adminAccessToken",
+			"value": "",
+			"type": "string",
+			"description": "JWT Access Token для администратора"
+		},
+		{
+			"key": "refreshToken",
+			"value": "",
+			"type": "string",
+			"description": "JWT Refresh Token"
+		},
+		{
+			"key": "userId",
+			"value": "1",
+			"type": "string",
+			"description": "ID пользователя для тестирования"
+		},
+		{
+			"key": "productId",
+			"value": "1",
+			"type": "string",
+			"description": "ID продукта для тестирования"
+		},
+		{
+			"key": "licenseTypeId",
+			"value": "1",
+			"type": "string",
+			"description": "ID типа лицензии для тестирования"
+		},
+		{
+			"key": "licenseId",
+			"value": "",
+			"type": "string",
+			"description": "ID лицензии для тестирования"
+		},
+		{
+			"key": "licenseCode",
+			"value": "",
+			"type": "string",
+			"description": "Код лицензии (будет заполнен после создания)"
+		},
+		{
+			"key": "deviceId",
+			"value": "",
+			"type": "string",
+			"description": "ID устройства (будет заполнен после регистрации)"
+		}
+	]
+}
