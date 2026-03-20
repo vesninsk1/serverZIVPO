@@ -34,7 +34,7 @@ jobs:
         
     - name: Decode keystore
       run: |
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > src/main/resources/FirdKey.jks
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > src/main/resources/server.jks
         
     - name: Build with Maven
       run: mvn clean compile
