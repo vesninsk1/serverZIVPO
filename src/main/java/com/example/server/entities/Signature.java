@@ -1,0 +1,52 @@
+package com.example.server.entities;
+
+import com.example.server.models.SignatureStatus;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Entity
+@Table(name = "signatures")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Signature {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+    
+    @Column(name = "threat_name", nullable = false)
+    private String threatName;
+    
+    @Column(name = "first_bytes_hex", nullable = false, length = 10000)
+    private String firstBytesHex;
+    
+    @Column(name = "remainder_hash_hex", nullable = false)
+    private String remainderHashHex;
+    
+    @Column(name = "remainder_length", nullable = false)
+    private Long remainderLength;
+    
+    @Column(name = "file_type", nullable = false)
+    private String fileType;
+    
+    @Column(name = "offset_start", nullable = false)
+    private Long offsetStart;
+    
+    @Column(name = "offset_end", nullable = false)
+    private Long offsetEnd;
+    
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SignatureStatus status;
+    
+    @Column(name = "digital_signature_base64", columnDefinition = "TEXT")
+    private String digitalSignatureBase64;
+}

@@ -1,0 +1,35 @@
+package com.example.server.entities;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Entity
+@Table(name = "signatures_audit")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class SignatureAudit {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long auditId;
+    
+    @Column(name = "signature_id", nullable = false)
+    private UUID signatureId;
+    
+    @Column(name = "changed_by", nullable = false)
+    private String changedBy;
+    
+    @Column(name = "changed_at", nullable = false)
+    private Instant changedAt;
+    
+    @Column(name = "fields_changed", columnDefinition = "TEXT")
+    private String fieldsChanged;
+    
+    @Column(length = 500)
+    private String description;
+}
