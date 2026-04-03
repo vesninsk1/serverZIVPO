@@ -12,6 +12,8 @@ env:
   JWT_REFRESH_EXPIRATION: ${{ secrets.JWT_REFRESH_EXPIRATION }}
   SERVER_KEYSTORE_PASSWORD: ${{ secrets.SERVER_KEYSTORE_PASSWORD }}
   KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
+  SIGNATURE_KEYSTORE_PASSWORD: ${{ secrets.SIGNATURE_KEYSTORE_PASSWORD }}
+  SIGNATURE_KEY_PASSWORD: ${{ secrets.SIGNATURE_KEY_PASSWORD }}
 
 jobs:
   build:
@@ -42,11 +44,14 @@ jobs:
         distribution: 'temurin'
         cache: maven
     
-    - name: Decode keystore
+    - name: Decode SSL keystore
       run: |
         mkdir -p src/main/resources
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > src/main/resources/server.jks
-        ls -la src/main/resources/
+    
+    - name: Decode signing keystore
+      run: |
+        echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 --decode > src/main/resources/signing.jks
     
     - name: Build with Maven
       run: mvn clean compile -B

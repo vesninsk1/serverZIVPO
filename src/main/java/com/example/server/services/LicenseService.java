@@ -180,7 +180,6 @@ public class LicenseService {
     
     @Transactional(readOnly = true)
     public LicenseTicket checkLicense(CheckLicenseRequest request, Long userId) {
-        Device device = deviceService.getDeviceByMacAndUserOrFail(request.getDeviceMac(), userId);
 
         License license = licenseRepository.findActiveByDeviceUserAndProduct(
                 request.getDeviceMac(), userId, request.getProductId())
