@@ -1,87 +1,52 @@
 package com.example.server.signature;
 
-import com.example.server.config.SignatureProperties;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.security.PrivateKey;
-import java.security.Signature;
+import java.security.*;
 import java.util.Base64;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class SigningService {
-    
-    private final Canonicalizer canonicalizer;
+
+    private final Canonicalization canonicalization;
     private final KeyProvider keyProvider;
-    private final SignatureProperties properties;
     
-    public SigningService(Canonicalizer canonicalizer, 
-                          KeyProvider keyProvider,
-                          SignatureProperties properties) {
-        this.canonicalizer = canonicalizer;
-        this.keyProvider = keyProvider;
-        this.properties = properties;
+    @Value("${signature.signature-algorithm:SHA256withRSA}")
+    private String algorithm;
+
+    public String sign(Object payload) throws Exception {
+        byte[] canonicalBytes = canonicalization.canonicalize(payload);
+        PrivateKey signingKey = keyProvider.getSigningKey();
+        return sign(signingKey, canonicalBytes);
     }
-    
-    public String sign(Object payload) {
-        try {
-            // 1. Canonicalization
-            byte[] canonicalBytes;
-            try {
-                canonicalBytes = canonicalizer.canonicalize(payload);
-                log.debug("Canonicalized payload to {} bytes", canonicalBytes.length);
-            } catch (SignatureException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new SignatureException(
-                    SignatureException.ErrorCode.CANONICALIZATION_ERROR,
-                    "Canonicalization failed: " + e.getMessage(),
-                    e
-                );
-            }
-            
-            // 2. Get signing key
-            PrivateKey privateKey;
-            try {
-                privateKey = keyProvider.getSigningKey();
-            } catch (SignatureException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new SignatureException(
-                    SignatureException.ErrorCode.KEY_PROVIDER_ERROR,
-                    "Failed to get signing key: " + e.getMessage(),
-                    e
-                );
-            }
-            
-            // 3. Sign
-            byte[] signatureBytes;
-            try {
-                Signature signature = Signature.getInstance(properties.getSignatureAlgorithm());
-                signature.initSign(privateKey);
-                signature.update(canonicalBytes);
-                signatureBytes = signature.sign();
-                log.debug("Generated signature of {} bytes", signatureBytes.length);
-            } catch (Exception e) {
-                throw new SignatureException(
-                    SignatureException.ErrorCode.SIGN_OPERATION_FAILED,
-                    "Sign operation failed: " + e.getMessage(),
-                    e
-                );
-            }
-            
-            // 4. Base64 encode
-            return Base64.getEncoder().encodeToString(signatureBytes);
-            
-        } catch (SignatureException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new SignatureException(
-                SignatureException.ErrorCode.SIGN_OPERATION_FAILED,
-                "Unexpected error during signing: " + e.getMessage(),
-                e
-            );
-        }
+
+    public byte[] sign(byte[] data) throws Exception {
+        PrivateKey signingKey = keyProvider.getSigningKey();
+        Signature signature = Signature.getInstance(algorithm);
+        signature.initSign(signingKey);
+        signature.update(data);
+        return signature.sign();
+    }
+
+    private String sign(PrivateKey key, byte[] bytes) throws Exception {
+        Signature signature = Signature.getInstance(algorithm);
+        signature.initSign(key);
+        signature.update(bytes);
+        byte[] signatureBytes = signature.sign();
+        return Base64.getEncoder().encodeToString(signatureBytes);
+    }
+
+    public boolean verify(String signature, Object payload) throws Exception {
+        byte[] canonicalBytes = canonicalization.canonicalize(payload);
+        PublicKey publicKey = keyProvider.getPublicKey();
+        Signature verifier = Signature.getInstance(algorithm);
+        verifier.initVerify(publicKey);
+        verifier.update(canonicalBytes);
+        return verifier.verify(Base64.getDecoder().decode(signature));
     }
 }

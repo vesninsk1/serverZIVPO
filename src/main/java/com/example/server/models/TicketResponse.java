@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TicketResponse {
     private Ticket ticket;
-    private String signature;
+    private String electronicDigitalSignature;
 }

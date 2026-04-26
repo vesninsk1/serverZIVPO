@@ -5,21 +5,15 @@ import com.example.server.entities.LicenseHistory;
 import com.example.server.entities.User;
 import com.example.server.models.*;
 import com.example.server.repositories.LicenseHistoryRepository;
-import com.example.server.repositories.LicenseRepository;
-import com.example.server.services.DeviceService;
 import com.example.server.services.LicenseService;
-import com.example.server.services.LicenseTicketBuilder;
-import com.example.server.services.TicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/licenses")
@@ -27,12 +21,7 @@ import java.util.stream.Collectors;
 public class LicenseController {
     
     private final LicenseService licenseService;
-    private final LicenseRepository licenseRepository;
     private final LicenseHistoryRepository licenseHistoryRepository;
-    private final LicenseTicketBuilder ticketBuilder;
-    private final DeviceService deviceService;
-    private final TicketService ticketService;
-    
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('modify')")
     public ResponseEntity<?> createLicense(
@@ -41,8 +30,7 @@ public class LicenseController {
         try {
             Long adminId = admin.getId();
             License license = licenseService.createLicense(request, adminId);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ticketBuilder.buildTicket(license));
+            return ResponseEntity.status(HttpStatus.CREATED).body(license);
         } catch (RuntimeException e) {
             String message = e.getMessage();
             if (message.contains("not found")) {
@@ -60,8 +48,8 @@ public class LicenseController {
             @AuthenticationPrincipal User user) {
         try {
             Long userId = user.getId();
-            LicenseTicket ticket = licenseService.activateLicense(request, userId);
-            return ResponseEntity.ok(ticket);
+            TicketResponse response = licenseService.activateLicense(request, userId);
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             String message = e.getMessage();
 
@@ -93,8 +81,8 @@ public class LicenseController {
             @AuthenticationPrincipal User user) {
         try {
             Long userId = user.getId();
-            LicenseTicket ticket = licenseService.renewLicense(request, userId);
-            return ResponseEntity.ok(ticket);
+            TicketResponse response = licenseService.renewLicense(request, userId);
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             String message = e.getMessage();
             
@@ -126,103 +114,31 @@ public class LicenseController {
         try {
             Long userId = user.getId();
             
-            if (!deviceService.deviceExistsAndBelongsToUser(request.getDeviceMac(), userId)) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("error", "Device not found or does not belong to user. Please register the device first."));
-            }
-            
-            LicenseTicket ticket = licenseService.checkLicense(request, userId);
-            return ResponseEntity.ok(ticket);
-        } catch (RuntimeException e) {
-            String message = e.getMessage();
-            
-            if (message.contains("not found")) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("error", message));
-            }
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", message));
-        }
-    }
-    
-    @PostMapping("/{licenseCode}/ticket")
-    public ResponseEntity<?> getLicenseTicket(
-            @PathVariable String licenseCode,
-            @RequestBody Map<String, String> request,
-            @AuthenticationPrincipal User user) {
-        try {
-            String macAddress = request.get("macAddress");
-            if (macAddress == null || macAddress.trim().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "MAC address is required"));
-            }
-            
-            TicketResponse response = ticketService.generateTicket(
-                    licenseCode,
-                    macAddress,
-                    user.getId()
-            );
+            TicketResponse response = licenseService.checkLicense(request, userId);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             String message = e.getMessage();
             
-            if (message.contains("not found")) {
+            if (message.contains("Device not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Device not found. Please register the device first."));
+            }
+            if (message.contains("does not belong")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", message));
+            }
+            if (message.contains("No active license found")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", message));
             }
-            if (message.contains("not belong") || message.contains("not activated")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("error", message));
+            if (message.contains("No valid ticket found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "No valid ticket found. Please activate the license first."));
             }
             return ResponseEntity.badRequest()
                     .body(Map.of("error", message));
         }
     }
-    
-    @GetMapping("/{code}")
-    public ResponseEntity<?> getLicenseByCode(@PathVariable String code) {
-        try {
-            License license = licenseRepository.findByCode(code)
-                    .orElseThrow(() -> new RuntimeException("License not found"));
-            return ResponseEntity.ok(ticketBuilder.buildTicket(license));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-    
-    @GetMapping("/user")
-    public ResponseEntity<?> getUserLicenses(@AuthenticationPrincipal User user) {
-        try {
-            Long userId = user.getId();
-            List<License> licenses = licenseRepository.findByUserId(userId);
-            List<LicenseTicket> tickets = licenses.stream()
-                    .map(ticketBuilder::buildTicket)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(tickets);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-    
-    @GetMapping("/user/active")
-    public ResponseEntity<?> getUserActiveLicenses(
-            @RequestParam Long productId,
-            @AuthenticationPrincipal User user) {
-        try {
-            Long userId = user.getId();
-            List<License> licenses = licenseRepository.findActiveByUserAndProduct(userId, productId);
-            List<LicenseTicket> tickets = licenses.stream()
-                    .map(ticketBuilder::buildTicket)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(tickets);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-    
     @GetMapping("/{licenseId}/history")
     @PreAuthorize("hasAuthority('modify')")
     public ResponseEntity<?> getLicenseHistory(@PathVariable Long licenseId) {
@@ -234,7 +150,6 @@ public class LicenseController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
-    
     @PutMapping("/{licenseId}/block")
     @PreAuthorize("hasAuthority('modify')")
     public ResponseEntity<?> blockLicense(

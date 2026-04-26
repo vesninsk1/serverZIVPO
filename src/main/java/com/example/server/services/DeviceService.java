@@ -68,7 +68,12 @@ public class DeviceService {
         return deviceRepository.save(newDevice);
     }
     
-
+    @Transactional(readOnly = true)
+    public Device getDeviceByIdOrFail(Long deviceId) {
+        return deviceRepository.findById(deviceId)
+                .orElseThrow(() -> new RuntimeException("Device not found with id: " + deviceId));
+    }
+    
     @Transactional(readOnly = true)
     public boolean deviceBelongsToUser(String macAddress, Long userId) {
         return deviceRepository.findByUserIdAndMacAddress(userId, macAddress)
