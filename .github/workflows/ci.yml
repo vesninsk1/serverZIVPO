@@ -15,6 +15,10 @@ env:
   SIGNATURE_KEYSTORE_PASSWORD: ${{ secrets.SIGNATURE_KEYSTORE_PASSWORD }}
   SIGNATURE_KEY_PASSWORD: ${{ secrets.SIGNATURE_KEY_PASSWORD }}
   PUBLIC_KEY_BASE64: ${{ vars.PUBLIC_KEY_BASE64 }}
+  # Для тестов используем те же переменные, но переопределяем URL на localhost
+  SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/server
+  SPRING_DATASOURCE_USERNAME: ${{ secrets.DB_USERNAME }}
+  SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
 jobs:
   build:
@@ -25,8 +29,8 @@ jobs:
         image: postgres:15
         env:
           POSTGRES_DB: server
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: admin
+          POSTGRES_USER: ${{ secrets.DB_USERNAME }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
         ports:
           - 5432:5432
         options: >-
