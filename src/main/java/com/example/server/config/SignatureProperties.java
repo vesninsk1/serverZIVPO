@@ -14,4 +14,5 @@ public class SignatureProperties {
     private String keyAlias;
     private String keyPassword;
     private String signatureAlgorithm = "SHA256withRSA";
+    private String publicKey;
 }

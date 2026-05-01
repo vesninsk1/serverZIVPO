@@ -12,8 +12,6 @@ import org.springframework.stereotype.Service;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.Certificate;
 
 @Slf4j
 @Service
@@ -24,12 +22,7 @@ public class KeyProvider {
     private final ResourceLoader resourceLoader;
 
     private volatile PrivateKey cachedPrivateKey;
-    private volatile PublicKey cachedPublicKey;
 
-    /**
-     * Загружаем ключи при старте приложения.
-     * Если keystore недоступен — приложение упадёт сразу, а не при первом запросе.
-     */
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
         loadKeys();
@@ -42,7 +35,6 @@ public class KeyProvider {
         String keyAlias         = properties.getKeyAlias();
         String keyPassword      = properties.getKeyPassword();
 
-        // Если пароль ключа не задан — используем пароль хранилища (поведение keytool по умолчанию)
         if (keyPassword == null || keyPassword.isEmpty()) {
             keyPassword = keyStorePassword;
         }
@@ -60,10 +52,7 @@ public class KeyProvider {
                 throw new RuntimeException("Private key is null for alias: " + keyAlias);
             }
 
-            Certificate certificate = keyStore.getCertificate(keyAlias);
-
             cachedPrivateKey = privateKey;
-            cachedPublicKey  = certificate.getPublicKey();
 
             log.info("Signing keys loaded from keystore, alias: {}", keyAlias);
 
@@ -92,10 +81,10 @@ public class KeyProvider {
         return key;
     }
 
-    public PublicKey getPublicKey() throws Exception {
-        PublicKey key = cachedPublicKey;
-        if (key == null) {
-            throw new IllegalStateException("Public key not initialized");
+    public String getPublicKeyBase64() {
+        String key = properties.getPublicKey();
+        if (key == null || key.isEmpty()) {
+            throw new IllegalStateException("SIGNATURE_PUBLIC_KEY is not set");
         }
         return key;
     }

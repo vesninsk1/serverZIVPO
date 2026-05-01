@@ -75,34 +75,40 @@ public class LicenseService {
     }
 
     @Transactional
+    //userId — идентификатор пользователя из токена аутентификации
     public TicketResponse activateLicense(ActivateLicenseRequest request, Long userId) {
+    /*Берём из запроса строку-ключ активации (activationKey) и ищем в таблице license запись с таким code. 
+    Если запись не найдена — бросаем исключение, транзакция откатывается, клиент получает ошибку. */
         License license = licenseRepository.findByCode(request.getActivationKey())
                 .orElseThrow(() -> new RuntimeException("License not found with code: " + request.getActivationKey()));
-
+        //Если флаг blocked = true — активация невозможна.
         if (license.getBlocked()) {
             throw new RuntimeException("License is blocked");
         }
-        
+        //Загружаем продукт и проверяем, не заблокированили он.
         Product product = productService.getProductOrFail(license.getProductId());
         if (product.getIsBlocked()) {
             throw new RuntimeException("Product is blocked");
         }
-        
+        /*Здесь два условия через &&:
+        license.getUserId() != null — лицензия уже была кем-то активирована (при первой активации userId проставляется в лицензии)
+        !license.getUserId().equals(userId) — и этот «кто-то» — не текущий пользователь
+        Если оба условия истинны — это чужая лицензия. */
         if (license.getUserId() != null && !license.getUserId().equals(userId)) {
             throw new RuntimeException("License already activated by another user");
         }
-
+        //Создаем устройство если его нет в базе
         Device device = DeviceService.registerDevice(
                 request.getDeviceMac(), 
                 request.getDeviceName(), 
                 userId);
-
+        //Таблица device_license — это связь «многие ко многим» между лицензией и устройством. Проверяем, существует ли уже активация на этом устройстве
         if (deviceLicenseRepository.existsByLicenseIdAndDeviceId(license.getId(), device.getId())) {
             throw new RuntimeException("License already activated on this device");
         }
-        
+        //если userId в лицензии ещё null — это первая активация в истории этой лицензии.
         boolean isFirstActivation = license.getUserId() == null;
-        
+        //Если первая активация 
         if (isFirstActivation) {
             LicenseType licenseType = licenseTypeService.getTypeOrFail(license.getTypeId());
             
@@ -111,13 +117,14 @@ public class LicenseService {
             license.setEndingDate(LocalDate.now().plusDays(licenseType.getDefaultDurationInDays()));
             
             licenseRepository.save(license);
+        //если повторная активация
         } else {
             int activatedCount = deviceLicenseRepository.countByLicenseId(license.getId());
             if (activatedCount >= license.getDeviceCount()) {
                 throw new RuntimeException("Device limit reached for this license. Maximum devices: " + license.getDeviceCount());
             }
         }
-        
+        //Создаём запись в таблице device_license — фиксируем факт активации данной лицензии на данном устройстве с текущей датой.
         DeviceLicense deviceLicense = DeviceLicense.builder()
                 .licenseId(license.getId())
                 .deviceId(device.getId())
@@ -127,7 +134,7 @@ public class LicenseService {
         
         log.info("License activated: {} by user: {} on device: {}", 
                 license.getCode(), userId, device.getMacAddress());
-
+        //создание TicketResponse. 
         return ticketService.generateTicket(license.getCode(), device.getMacAddress(), userId);
     }
 

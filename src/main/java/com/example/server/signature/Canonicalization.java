@@ -56,13 +56,6 @@ public class Canonicalization {
         return node.toString();
     }
 
-    /**
-     * Сериализация double по правилам ECMAScript (RFC 8785 §3.2.2).
-     * Использует алгоритм Grisu/Ryu-подобный через Double.toString(),
-     * но приводит формат к ECMAScript-виду:
-     * - убирает суффикс ".0" для целых (1.0 → 1 уже обработан через isIntegral)
-     * - заменяет Java-экспоненту "E" → "e+" / "e-"
-     */
     private String doubleToEcmaString(double val) {
         // Целые значения — без дробной части
         if (val == Math.floor(val) && !Double.isInfinite(val)
@@ -72,7 +65,6 @@ public class Canonicalization {
 
         String s = Double.toString(val);
 
-        // Java пишет "E10", ECMAScript ожидает "e+10" или "e-10"
         int eIdx = s.indexOf('E');
         if (eIdx >= 0) {
             String mantissa = s.substring(0, eIdx);
@@ -92,26 +84,24 @@ public class Canonicalization {
         while (i < chars.length) {
             char c = chars[i];
 
-            // Проверяем суррогаты
             if (c >= 0xD800 && c <= 0xDFFF) {
-                // Старший суррогат — ожидаем следующий младший
+
                 if (c >= 0xD800 && c <= 0xDBFF) {
                     if (i + 1 < chars.length) {
                         char next = chars[i + 1];
                         if (next >= 0xDC00 && next <= 0xDFFF) {
-                            // Валидная суррогатная пара — пишем как есть
+
                             sb.append(c);
                             sb.append(next);
                             i += 2;
                             continue;
                         }
                     }
-                    // Одиночный старший суррогат — ошибка
+ 
                     throw new IllegalStateException(
                             "Lone surrogate U+" + String.format("%04X", (int) c)
                                     + " is not allowed in RFC 8785");
                 } else {
-                    // Одиночный младший суррогат — ошибка
                     throw new IllegalStateException(
                             "Lone surrogate U+" + String.format("%04X", (int) c)
                                     + " is not allowed in RFC 8785");
@@ -149,17 +139,11 @@ public class Canonicalization {
         return sb.toString();
     }
 
-    /**
-     * Сортировка свойств объекта по RFC 8785 §3.2.3:
-     * сравнение по UTF-16 code units как беззнаковым значениям.
-     * В Java char беззнаковый (0..65535), поэтому Character.compare
-     * даёт корректное беззнаковое сравнение.
-     */
     private String serializeObject(JsonNode object) {
         List<String> fieldNames = new ArrayList<>();
         object.fieldNames().forEachRemaining(fieldNames::add);
 
-        // Сортировка по UTF-16 code units как беззнаковым (RFC 8785 §3.2.3)
+
         fieldNames.sort(Comparator.comparingInt(String::length)
                 .thenComparing((a, b) -> {
                     for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
@@ -169,11 +153,10 @@ public class Canonicalization {
                     return Integer.compare(a.length(), b.length());
                 }));
 
-        // Правильная сортировка: лексикографически по UTF-16 code units
         fieldNames.sort((a, b) -> {
             int len = Math.min(a.length(), b.length());
             for (int i = 0; i < len; i++) {
-                // Сравниваем как беззнаковые (char в Java уже беззнаковый 0..65535)
+
                 int diff = Character.compare(a.charAt(i), b.charAt(i));
                 if (diff != 0) return diff;
             }
