@@ -59,7 +59,7 @@ jobs:
         echo "${{ vars.PUBLIC_KEY_BASE64 }}" | base64 --decode > src/main/resources/public.key
     
     - name: Build with Maven
-      run: mvn clean compile -B
+      run: mvn clean compile
       
     - name: Run tests
       run: mvn test -B
