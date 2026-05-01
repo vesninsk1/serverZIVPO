@@ -56,7 +56,7 @@ jobs:
     
     - name: Decode public key
       run: |
-        echo "${{ vars.SIGNATURE_PUBLIC_KEY }}" | base64 --decode > src/main/resources/public.key
+        echo "${{ vars.SIGNATURE_PUBLIC_KEY }}"  | tr -d ' \n\r' | base64 --decode > src/main/resources/public.key
     
     - name: Build with Maven
       run: mvn clean compile
