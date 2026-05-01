@@ -20,31 +20,26 @@ public class SigningService {
     @Value("${signature.signature-algorithm:SHA256withRSA}")
     private String algorithm;
 
-    /**
-     * Подпись объектного payload — для сигнатур записей.
-     * payload → канонизация → UTF-8 байты → подпись → Base64 строка.
-     */
     public String sign(Object payload) throws Exception {
+        //канонизация
         byte[] canonicalBytes = canonicalization.canonicalize(payload);
+        //подпись
         return signBytesToBase64(canonicalBytes);
     }
 
-    /**
-     * Подпись готового байтового массива — для манифеста (§8 методички).
-     * Принимает уже сформированные байты, подписывает приватным ключом,
-     * возвращает сырые байты подписи (не Base64 — манифест сам их упакует).
-     */
     public byte[] sign(byte[] data) throws Exception {
+         // Получаем приватный ключ из провайдера
         PrivateKey signingKey = keyProvider.getSigningKey();
+        // Создаём экземпляр Signature для указанного алгоритма
         Signature signature = Signature.getInstance(algorithm);
+         // Инициализируем подпись приватным ключом
         signature.initSign(signingKey);
+        // Передаём данные для подписи
         signature.update(data);
+        // Вычисляем и возвращаем цифровую подпись
         return signature.sign();
     }
-
-    /**
-     * Проверка подписи объектного payload.
-     */
+    //Проверяем цифровую подпись для указанного объекта.
     public boolean verify(String signatureBase64, Object payload) throws Exception {
         byte[] canonicalBytes = canonicalization.canonicalize(payload);
         java.security.PublicKey publicKey = keyProvider.getPublicKey();
@@ -53,8 +48,6 @@ public class SigningService {
         verifier.update(canonicalBytes);
         return verifier.verify(Base64.getDecoder().decode(signatureBase64));
     }
-
-    // ── приватный вспомогательный метод ──
 
     private String signBytesToBase64(byte[] bytes) throws Exception {
         byte[] raw = sign(bytes);

@@ -2,18 +2,18 @@ package com.example.server.signature;
 
 import com.example.server.config.SignatureProperties;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class KeyProvider {
@@ -22,70 +22,112 @@ public class KeyProvider {
     private final ResourceLoader resourceLoader;
 
     private volatile PrivateKey cachedPrivateKey;
-
-    @EventListener(ApplicationReadyEvent.class)
-    public void init() {
-        loadKeys();
-    }
-
-    private synchronized void loadKeys() {
-        String keyStorePath     = properties.getKeyStorePath();
-        String keyStoreType     = properties.getKeyStoreType();
-        String keyStorePassword = properties.getKeyStorePassword();
-        String keyAlias         = properties.getKeyAlias();
-        String keyPassword      = properties.getKeyPassword();
-
-        if (keyPassword == null || keyPassword.isEmpty()) {
-            keyPassword = keyStorePassword;
+    private volatile PublicKey cachedPublicKey;
+    
+    public PrivateKey getSigningKey() {
+        PrivateKey cached = cachedPrivateKey;
+        if (cached != null) {
+            return cached;
         }
-
-        try (InputStream is = openKeyStore(keyStorePath)) {
-            KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-            keyStore.load(is, keyStorePassword.toCharArray());
-
-            if (!keyStore.containsAlias(keyAlias)) {
-                throw new RuntimeException("Alias '" + keyAlias + "' not found in keystore");
+        synchronized (this) {
+            if (cachedPrivateKey == null) {
+                cachedPrivateKey = loadPrivateKey();
             }
-
-            PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyAlias, keyPassword.toCharArray());
-            if (privateKey == null) {
-                throw new RuntimeException("Private key is null for alias: " + keyAlias);
-            }
-
-            cachedPrivateKey = privateKey;
-
-            log.info("Signing keys loaded from keystore, alias: {}", keyAlias);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to load keystore: " + e.getMessage(), e);
+            return cachedPrivateKey;
         }
     }
 
-    private InputStream openKeyStore(String path) {
+    public PublicKey getPublicKey() {
+        PublicKey cached = cachedPublicKey;
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (this) {
+            if (cachedPublicKey == null) {
+                cachedPublicKey = loadPublicKey();
+            }
+            return cachedPublicKey;
+        }
+    }
+
+    private PrivateKey loadPrivateKey() {
+        // Загружаем keystore
+        KeyStore keyStore = loadKeyStore();
+        String alias = requireNonBlank(properties.getKeyAlias(), "signature.keyAlias is not configured");
+        char[] keyPassword = resolveKeyPassword();
         try {
-            if (path.startsWith("classpath:") || path.startsWith("file:")) {
-                Resource resource = resourceLoader.getResource(path);
-                return resource.getInputStream();
+            java.security.Key key = keyStore.getKey(alias, keyPassword);
+            if (key == null) {
+                throw new IllegalStateException("Key with alias '" + alias + "' was not found in keystore");
             }
-            return new java.io.FileInputStream(path);
-        } catch (Exception e) {
-            throw new RuntimeException("Cannot open keystore file: " + path, e);
+            if (!(key instanceof PrivateKey privateKeyValue)) {
+                throw new IllegalStateException("Alias '" + alias + "' does not contain a private key entry");
+            }
+            return privateKeyValue;
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to load private key", ex);
         }
     }
 
-    public PrivateKey getSigningKey() throws Exception {
-        PrivateKey key = cachedPrivateKey;
-        if (key == null) {
-            throw new IllegalStateException("Private key not initialized");
+    private PublicKey loadPublicKey() {
+        KeyStore keyStore = loadKeyStore();
+        String alias = requireNonBlank(properties.getKeyAlias(), "signature.keyAlias is not configured");
+        try {
+            Certificate certificate = keyStore.getCertificate(alias);
+            if (certificate == null) {
+                throw new IllegalStateException("Certificate for alias '" + alias + "' was not found in keystore");
+            }
+            return certificate.getPublicKey();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to load public key", ex);
         }
-        return key;
     }
 
-    public String getPublicKeyBase64() {
-        String key = properties.getPublicKey();
-        if (key == null || key.isEmpty()) {
-            throw new IllegalStateException("SIGNATURE_PUBLIC_KEY is not set");
+    private KeyStore loadKeyStore() {
+        String keyStorePath = requireNonBlank(properties.getKeyStorePath(), "signature.keyStorePath is not configured");
+        String keyStoreType = properties.getKeyStoreType() == null || properties.getKeyStoreType().isBlank()
+                ? "JKS"
+                : properties.getKeyStoreType();
+        char[] keyStorePassword = requireNonBlank(
+                properties.getKeyStorePassword(),
+                "signature.keyStorePassword is not configured"
+        ).toCharArray();
+
+        try (InputStream inputStream = openKeyStoreStream(keyStorePath)) {
+            KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+            keyStore.load(inputStream, keyStorePassword);
+            return keyStore;
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to load keystore from path: " + keyStorePath, ex);
         }
-        return key;
+    }
+
+    private char[] resolveKeyPassword() {
+        String keyPassword = properties.getKeyPassword();
+        if (keyPassword != null && !keyPassword.isBlank()) {
+            return keyPassword.toCharArray();
+        }
+        return requireNonBlank(properties.getKeyStorePassword(), "signature.keyStorePassword is not configured")
+                .toCharArray();
+    }
+
+    private InputStream openKeyStoreStream(String keyStorePath) throws Exception {
+        String normalizedPath = keyStorePath.trim();
+        String lowerPath = normalizedPath.toLowerCase();
+        if (lowerPath.startsWith("classpath:") || lowerPath.startsWith("file:")) {
+            Resource resource = resourceLoader.getResource(normalizedPath);
+            if (!resource.exists()) {
+                throw new IllegalStateException("Keystore resource was not found: " + normalizedPath);
+            }
+            return resource.getInputStream();
+        }
+        return Files.newInputStream(Path.of(normalizedPath));
+    }
+
+    private String requireNonBlank(String value, String message) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException(message);
+        }
+        return value;
     }
 }
