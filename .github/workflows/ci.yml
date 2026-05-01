@@ -14,6 +14,7 @@ env:
   KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
   SIGNATURE_KEYSTORE_PASSWORD: ${{ secrets.SIGNATURE_KEYSTORE_PASSWORD }}
   SIGNATURE_KEY_PASSWORD: ${{ secrets.SIGNATURE_KEY_PASSWORD }}
+  PUBLIC_KEY_BASE64: ${{ vars.PUBLIC_KEY_BASE64 }}
 
 jobs:
   build:
@@ -52,6 +53,10 @@ jobs:
     - name: Decode signing keystore
       run: |
         echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 --decode > src/main/resources/signing.jks
+    
+    - name: Decode public key
+      run: |
+        echo "${{ vars.PUBLIC_KEY_BASE64 }}" | base64 --decode > src/main/resources/public.key
     
     - name: Build with Maven
       run: mvn clean compile -B
