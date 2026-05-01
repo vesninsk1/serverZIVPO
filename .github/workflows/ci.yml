@@ -44,6 +44,8 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
+    - name: Clear Maven cache for local project
+      run: rm -rf ~/.m2/repository/com/example
     
     - name: Decode SSL keystore
       run: |
