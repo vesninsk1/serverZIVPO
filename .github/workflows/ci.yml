@@ -15,10 +15,7 @@ env:
   SIGNATURE_KEYSTORE_PASSWORD: ${{ secrets.SIGNATURE_KEYSTORE_PASSWORD }}
   SIGNATURE_KEY_PASSWORD: ${{ secrets.SIGNATURE_KEY_PASSWORD }}
   PUBLIC_KEY_BASE64: ${{ vars.SIGNATURE_PUBLIC_KEY }}
-  MINIO_URL: http://localhost:9000
-  MINIO_ACCESS_KEY: minio-ci-user
-  MINIO_SECRET_KEY: minio-ci-secret
-  MINIO_BUCKET: signatures
+
 
 jobs:
   build:
@@ -39,19 +36,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-      minio:
-        image: bitnami/minio:latest
-        env:
-          MINIO_ROOT_USER: minioadmin
-          MINIO_ROOT_PASSWORD: minioadmin123
-        ports:
-          - 9000:9000
-          - 9001:9001
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
 
     steps:
     - uses: actions/checkout@v4
