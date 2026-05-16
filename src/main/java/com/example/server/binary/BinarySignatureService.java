@@ -12,11 +12,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Сервисный слой бинарного API.
- * Отвечает за выборку данных и координацию сборки бинарного пакета.
- * Не содержит бизнес-логики управления сигнатурами — только транспортная сборка.
- */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -27,7 +23,7 @@ public class BinarySignatureService {
     private final ManifestBinarySerializer       manifestSerializer;
     private final MultipartMixedResponseFactory  responseFactory;
 
-    // ───────── полная база (только ACTUAL) ─────────
+    // полная база (только ACTUAL)
 
     @Transactional(readOnly = true)
     public org.springframework.http.ResponseEntity<?> buildFullResponse() throws Exception {
@@ -36,7 +32,7 @@ public class BinarySignatureService {
         return buildResponse(signatures, ExportType.FULL, -1L);
     }
 
-    // ───────── инкремент (ACTUAL + DELETED, изменённые после since) ─────────
+    // инкремент (ACTUAL + DELETED, изменённые после since)
 
     @Transactional(readOnly = true)
     public org.springframework.http.ResponseEntity<?> buildIncrementResponse(
@@ -46,7 +42,7 @@ public class BinarySignatureService {
         return buildResponse(signatures, ExportType.INCREMENT, since.toEpochMilli());
     }
 
-    // ───────── по списку UUID ─────────
+    //  по списку UUID 
 
     @Transactional(readOnly = true)
     public org.springframework.http.ResponseEntity<?> buildByIdsResponse(
@@ -55,7 +51,7 @@ public class BinarySignatureService {
         return buildResponse(signatures, ExportType.BY_IDS, -1L);
     }
 
-    // ───────── общая сборка пакета ─────────
+    // общая сборка пакета
 
     private org.springframework.http.ResponseEntity<?> buildResponse(
             List<MalwareSignature> signatures,
@@ -66,14 +62,14 @@ public class BinarySignatureService {
         byte[] dataBytes = dataSerializer.serialize(signatures);
 
         // 2. Вычисляем смещения и длины каждой записи в data.bin
-        //    Для этого сериализуем каждую запись отдельно, чтобы знать её размер
+        //    dataOffset - смещение начала записи относительно области данных
+        //    dataLength - длина записи в байтах
         long[] dataOffsets = new long[signatures.size()];
         long[] dataLengths = new long[signatures.size()];
         long currentOffset = 0;
 
-        // Пересчитываем длины отдельных записей (без заголовка data.bin)
-        // Заголовок = MAGIC(uint32+bytes) + version(uint16) + recordCount(uint32)
-        // Нам нужны смещения только полезной нагрузки записей, offset=0 для первой
+  
+        // Смещение первой записи = 0, каждая следующая начинается после предыдущей
         for (int i = 0; i < signatures.size(); i++) {
             byte[] recordBytes = dataSerializer.serializeSingle(signatures.get(i));
             dataOffsets[i] = currentOffset;

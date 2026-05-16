@@ -10,10 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-/**
- * Фабрика multipart/mixed ответов.
- * Порядок частей фиксирован: сначала manifest.bin, затем data.bin (§3 методички).
- */
+
 @Component
 public class MultipartMixedResponseFactory {
 

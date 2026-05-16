@@ -8,30 +8,10 @@ import java.util.List;
 
 import static com.example.server.binary.BinaryWriteUtils.*;
 
-/**
- * Сериализатор data.bin (§6 методички).
- *
- * ЗАГОЛОВОК:
- *   magic           — uint32 len + UTF-8 bytes
- *   version         — uint16
- *   recordCount     — uint32
- *
- * ЗАПИСИ [recordCount]:
- *   threatName      — uint32 len + UTF-8 bytes
- *   firstBytes      — uint32 len + raw bytes  (hex → bytes)
- *   remainderHash   — uint32 len + raw bytes  (hex → bytes)
- *   remainderLength — int64
- *   fileType        — uint32 len + UTF-8 bytes
- *   offsetStart     — int64
- *   offsetEnd       — int64
- *
- * Не включаются: id, status, updatedAt, digitalSignatureBase64 (§6.3).
- * Порядок байт: BigEndian (§7).
- */
 @Component
 public class DataBinarySerializer {
 
-    private static final String MAGIC   = "DB-VESNINSK1";
+    private static final String MAGIC   = "DB-DMITRIEVA";
     private static final int    VERSION = 1;
 
     /** Полный data.bin: заголовок + все записи */

@@ -15,6 +15,10 @@ env:
   SIGNATURE_KEYSTORE_PASSWORD: ${{ secrets.SIGNATURE_KEYSTORE_PASSWORD }}
   SIGNATURE_KEY_PASSWORD: ${{ secrets.SIGNATURE_KEY_PASSWORD }}
   PUBLIC_KEY_BASE64: ${{ vars.SIGNATURE_PUBLIC_KEY }}
+  MINIO_URL: http://localhost:9000
+  MINIO_ACCESS_KEY: minio-ci-user
+  MINIO_SECRET_KEY: minio-ci-secret
+  MINIO_BUCKET: signatures
 
 jobs:
   build:
@@ -35,40 +39,55 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      minio:
+        image: minio/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin123
+        ports:
+          - 9000:9000
+          - 9001:9001
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
+
     - name: Clear Maven cache for local project
       run: rm -rf ~/.m2/repository/com/example
-    
+
     - name: Decode SSL keystore
       run: |
         mkdir -p src/main/resources
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > src/main/resources/server.jks
-    
+
     - name: Decode signing keystore
       run: |
         echo "${{ secrets.SIGNING_KEYSTORE_BASE64 }}" | base64 --decode > src/main/resources/signing.jks
-    
+
     - name: Decode public key
       run: |
-        echo "${{ vars.SIGNATURE_PUBLIC_KEY }}"  | tr -d ' \n\r' | base64 --decode > src/main/resources/public.key
-    
+        echo "${{ vars.SIGNATURE_PUBLIC_KEY }}" | tr -d ' \n\r' | base64 --decode > src/main/resources/public.key
+
     - name: Build with Maven
       run: mvn clean compile
-      
+
     - name: Run tests
       run: mvn test -B
-      
+
     - name: Package application
       run: mvn package -DskipTests -B
-      
+
     - name: Upload test reports
       if: always()
       uses: actions/upload-artifact@v4
