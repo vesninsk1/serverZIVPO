@@ -1,7 +1,5 @@
 name: Java CI
-
 on: [push, pull_request]
-
 env:
   DB_URL: ${{ secrets.DB_URL }}
   DB_USERNAME: ${{ secrets.DB_USERNAME }}
@@ -15,8 +13,10 @@ env:
   SIGNATURE_KEYSTORE_PASSWORD: ${{ secrets.SIGNATURE_KEYSTORE_PASSWORD }}
   SIGNATURE_KEY_PASSWORD: ${{ secrets.SIGNATURE_KEY_PASSWORD }}
   PUBLIC_KEY_BASE64: ${{ vars.SIGNATURE_PUBLIC_KEY }}
-
-
+  MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
+  MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+  MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+  MINIO_BUCKET: ${{ secrets.MINIO_BUCKET }}
 jobs:
   build:
     runs-on: ubuntu-latest
